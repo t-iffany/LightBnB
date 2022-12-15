@@ -1,5 +1,23 @@
+require("dotenv").config();
+
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
+
+const { Pool } = require('pg');
+
+const config = {
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME
+};
+
+const pool = new Pool(config);
+
+pool.connect();
+
+// the following assumes that you named your connection variable `pool`
+// pool.query(`SELECT title FROM properties LIMIT 10;`).then(response => {console.log(response)})
 
 /// Users
 
@@ -66,13 +84,18 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function(options, limit = 10) {
-  const limitedProperties = {};
-  for (let i = 1; i <= limit; i++) {
-    limitedProperties[i] = properties[i];
-  }
-  return Promise.resolve(limitedProperties);
-}
+
+const getAllProperties = (options, limit = 10) => {
+  return pool
+    .query (`SELECT * FROM properties LIMIT $1`, [limit])
+    .then((result) => {
+      console.log(result.rows);
+      return result.rows;
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+};
 exports.getAllProperties = getAllProperties;
 
 
